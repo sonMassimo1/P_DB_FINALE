@@ -1,0 +1,8 @@
+{
+	"host": "localhost",
+	"username": "operatore",
+	"password": "operatore",
+	"port": 3306,
+	"database": "mydb"
+}
+
