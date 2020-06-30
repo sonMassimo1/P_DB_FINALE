@@ -246,9 +246,7 @@ void dump_result_set(MYSQL *conn, MYSQL_STMT *stmt, char *title)
                     
 				    case MYSQL_TYPE_TIMESTAMP: 
                         date = (MYSQL_TIME *)rs_bind[i].buffer;
-                    
-                        printf("%02d/%02d/%4d-%02d:%02d:%02d  |", date->day, date->month, date->year,date->hour,date->minute,date->second);
-                    
+                        printf("%02d/%02d/%4d %02d:%02d:%02d  |", date->day, date->month, date->year,date->hour,date->minute,date->second);
                         break;
 					case MYSQL_TYPE_TIME:
 						date = (MYSQL_TIME *)rs_bind[i].buffer;
@@ -285,11 +283,15 @@ void dump_result_set(MYSQL *conn, MYSQL_STMT *stmt, char *title)
 					case MYSQL_TYPE_NEWDECIMAL:
 						printf(" %-*.02lf |", (int)fields[i].length, *(float*) rs_bind[i].buffer);
 						break;
+                    case MYSQL_TYPE_NULL:
+                        printf("null");
+                        break;
 	 
 					default:
 					    printf("ERROR: Unhandled type (%d)\n", rs_bind[i].buffer_type);
 					    abort();
 				}
+               
 			}
             
 			putchar('\n');

@@ -135,7 +135,7 @@ static void Aggiungi_Colore (MYSQL *conn){
 	MYSQL_BIND param[2];
 
 	char colorazione[20];
-	char pianta[6];
+	char pianta[7];
 
 	printf("\nInserisci Pianta: ");
 	getInput(6, pianta, false);
@@ -216,15 +216,77 @@ static void Modifica_Prezzo (MYSQL *conn){
 
 }
 
+static void crea_utente (MYSQL *conn){
+    MYSQL_STMT *prepared_stmt;
+	MYSQL_BIND param[3];
+
+	char username[45];
+	char password[32];
+    char tipo[10];
+    char options[4] ={'1','2'};
+	char p;
+
+	printf("\nInserisci Username: ");
+	getInput(45, username, false);
+	printf("Inserisci Password: ");
+	getInput(32, password, false);
+    printf("Seleziona Ruolo: \n");
+    printf("\t1) Manager\n");
+	printf("\t2) Operatore\n");
+	p = multiChoice("Seleziona Ruolo:", options, 2);
+	switch(p) {
+		case '1':
+			strcpy(tipo, "Manager");
+			break;
+		case '2':
+			strcpy(tipo, "operatore");
+			break;
+        default:
+			fprintf(stderr, "Invalid condition at %s:%d\n", __FILE__, __LINE__);
+			abort();
+	}
+
+	if(!setup_prepared_stmt(&prepared_stmt, "call crea_utente(?, ?, ?)", conn)) {
+		finish_with_stmt_error(conn, prepared_stmt, "Unable to initialize student insertion statement\n", false);
+	}
+
+	memset(param, 0, sizeof(param));
+
+	param[0].buffer_type = MYSQL_TYPE_VAR_STRING;  //IN
+	param[0].buffer = username;
+	param[0].buffer_length = strlen(username);
+
+	param[1].buffer_type = MYSQL_TYPE_VAR_STRING;  //IN
+	param[1].buffer = password;
+	param[1].buffer_length = strlen(password);
+    
+    param[2].buffer_type = MYSQL_TYPE_VAR_STRING;  //IN
+	param[2].buffer =tipo;
+	param[2].buffer_length = strlen(tipo);
+
+	if (mysql_stmt_bind_param(prepared_stmt, param) != 0) {
+		finish_with_stmt_error(conn, prepared_stmt, "Impossibile associare i parametri.\n", true);
+	}
+
+	// Run procedure
+	if (mysql_stmt_execute(prepared_stmt) != 0) {
+		print_stmt_error (prepared_stmt, "Errore durante la creazione dell'utente.");
+	} else {
+		printf("Utente creato con successo.\n");
+	}
+
+	mysql_stmt_close(prepared_stmt);
+
+}
 
 
 
 
 void run_as_manager(MYSQL *conn){
-	char options[4] = {'1','2','3','4'};
+	char options[5] = {'1','2','3','4','5'};
 	char op;
 	
-	printf("Passo al ruolo di Manager...\n");
+	printf("------------>Passo al ruolo di Manager...\n");
 
 	if(!parse_config("users/Manager.json", &conf)) {
 		fprintf(stderr, "Impossibile caricare info Manager\n");
@@ -237,14 +299,15 @@ void run_as_manager(MYSQL *conn){
 	}
 
 	while(true) {
-		//printf("\033[2J\033[H");
-		printf("*** Cosa desidera fare ? ***\n\n");
+		printf("\033[2J\033[H");
+		printf("----- Cosa desidera fare ? -----\n\n");
 		printf("1) Aggiungi Specie di Pianta\n");
 		printf("2) Aggiungi Colore a Pianta\n");
 		printf("3) Modifica Prezzo di una Pianta\n");
-		printf("4) Esci\n");
+        printf("4) Aggiungi un nuovo utente\n");
+		printf("5) Esci\n\n");
 
-		op = multiChoice("Seleziona un opzione(1,2,3,4)", options, 4);
+		op = multiChoice("Seleziona un opzione", options, 5);
 
 		switch(op) {
 
@@ -257,7 +320,10 @@ void run_as_manager(MYSQL *conn){
 			case '3':
 				Modifica_Prezzo(conn);
 				break;
-			case '4':
+            case '4':
+                crea_utente(conn);
+                break;
+			case '5':
 				return;
 				
 			default:

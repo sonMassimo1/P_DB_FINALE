@@ -142,8 +142,8 @@ int main(void) {
             fprintf(stderr, "Invalid condition at %s:%d\n", __FILE__, __LINE__);
             abort();
     }
-    printf("----------------------------------------------------------------------------------\n");   
-    printf("Ciao!\n");
+    printf("----------------------------- CIAO ---------------------------------------\n");   
+    
     
     mysql_close (conn);
 

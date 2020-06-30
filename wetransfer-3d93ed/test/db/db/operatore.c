@@ -593,7 +593,7 @@ static void V_Fornitori(MYSQL *conn){
 	} else {
 		dump_result_set(conn, prepared_stmt, "-------------Visualizza Fornitori Pianta-------------");
 	}
-
+    mysql_stmt_next_result(prepared_stmt);
 	mysql_stmt_close(prepared_stmt);
 
 }
@@ -629,7 +629,7 @@ static void V_ordine(MYSQL *conn){
 	} else {
 		dump_result_set(conn, prepared_stmt, "-------------Visualizza informazioni ordine-------------");
 	}
-
+    mysql_stmt_next_result(prepared_stmt);
 	mysql_stmt_close(prepared_stmt);
 } 
 //10
@@ -665,7 +665,7 @@ static void V_Ordini_Cliente(MYSQL *conn){
 	} else {
 		dump_result_set(conn, prepared_stmt, "-------------Visualizza Ordini di un Cliente-------------");
 	}
-
+    mysql_stmt_next_result(prepared_stmt);
 	mysql_stmt_close(prepared_stmt);
 } 
 //11
@@ -700,6 +700,7 @@ static void V_pianta(MYSQL *conn){
 	} else {
         dump_result_set(conn, prepared_stmt, "-------------Visualizza Pianta-------------");
     }
+    mysql_stmt_next_result(prepared_stmt);
 	mysql_stmt_close(prepared_stmt);
 
 
@@ -738,7 +739,7 @@ static void V_colorazione(MYSQL *conn){
 		
         dump_result_set(conn, prepared_stmt, "-------------Visualizza Colorazioni della pianta-------------");
     }
-
+    mysql_stmt_next_result(prepared_stmt);
 	mysql_stmt_close(prepared_stmt);	
 
 }
@@ -776,7 +777,7 @@ static void V_prezzi(MYSQL *conn){
         dump_result_set(conn, prepared_stmt, "-------------Storico Prezzo Pianta-------------");
     }
     
-    
+    mysql_stmt_next_result(prepared_stmt);
 	mysql_stmt_close(prepared_stmt);
 
 }
@@ -812,7 +813,7 @@ static void V_piante_inserire(MYSQL *conn){
 	} else {
         dump_result_set(conn, prepared_stmt, "-------------Piante da Inserire nel Pacco-------------");
 	}
-
+    mysql_stmt_next_result(prepared_stmt);
 	mysql_stmt_close(prepared_stmt);
 
 }
@@ -848,16 +849,54 @@ static void V_piante_inserite(MYSQL *conn){
 	} else {
 		dump_result_set(conn, prepared_stmt, "-------------Piante inserite nel Pacco-------------");
 	}
-
+    mysql_stmt_next_result(prepared_stmt);
 	mysql_stmt_close(prepared_stmt);
 
 }
 
 
 
+ static void V_costo_ordine(MYSQL *conn){
+     
+    MYSQL_STMT *prepared_stmt;
+	MYSQL_BIND param[1];
+
+	int ordine;
+
+	printf("Inserisci num. Ordine: ");
+	scanf("%d", &ordine);
+
+	if(!setup_prepared_stmt(&prepared_stmt, "call visualizza_totale_ordine(?)", conn)) {
+		finish_with_stmt_error(conn, prepared_stmt, "Unable to initialize student insertion statement\n", false);
+	}
+
+	memset(param, 0, sizeof(param));
+
+	param[0].buffer_type = MYSQL_TYPE_LONG;  //IN
+	param[0].buffer = &ordine;
+	param[0].buffer_length = sizeof(ordine);
+
+
+
+	if (mysql_stmt_bind_param(prepared_stmt, param) != 0) {
+		finish_with_stmt_error(conn, prepared_stmt, "Impossibile associare i parametri.\n", true);
+	}
+
+	// Run procedure
+	if (mysql_stmt_execute(prepared_stmt) != 0) {
+		print_stmt_error (prepared_stmt, "Errore durante la visualizzazione delle costo totale dell'ordine.");
+	} else {
+		dump_result_set(conn, prepared_stmt, "-------------Costo Totale Ordine-------------");
+	}
+    mysql_stmt_next_result(prepared_stmt);
+	mysql_stmt_close(prepared_stmt);
+
+}
+
+
 void run_as_operatore(MYSQL *conn){
     
-    char options[18]={'1','2','3','4','5','6','7','8','9','a','b','c','d','e','f','g', 'h', 'i'};
+    char options[19]={'1','2','3','4','5','6','7','8','9','a','b','c','d','e','f','g', 'h', 'i', 'l'};
 	char op;
     int ordine, pacco;
     int i, loop;
@@ -875,7 +914,7 @@ void run_as_operatore(MYSQL *conn){
 	}
 
 	while(true) {
-		//printf("\033[2J\033[H");
+		
 		printf("*** Cosa desidera fare ? ***\n\n");
 		printf("1) Aggiorna Giacenza Magazzino\n");
 		printf("2) Aggiungi Cliente Privato\n");
@@ -894,9 +933,10 @@ void run_as_operatore(MYSQL *conn){
         printf("f) Visualizzare Storico Prezzi di Pianta\n");
 		printf("g) Visualizzare Piante da inserire nel Pacco\n");
 		printf("h) Visualizza Piante del Pacco\n");
-		printf("i) Esci\n");
+        printf("i) Visualizza Costo Totale Ordine\n");
+		printf("l) Esci\n");
 
-        op=multiChoice("select option", options, 18);
+        op=multiChoice("select option", options, 19);
         
 		switch(op) {
 
@@ -973,7 +1013,10 @@ void run_as_operatore(MYSQL *conn){
 			case 'h':
 				V_piante_inserite(conn);
 				break;
-			case 'i':
+            case 'i':
+                V_costo_ordine(conn);
+                break;
+			case 'l':
 				return;
 			default:
 				fprintf(stderr, "Invalid condition at %s:%d\n", __FILE__, __LINE__);
